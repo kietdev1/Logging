@@ -1,10 +1,11 @@
 import { addHours } from '@/lib/extensions/DateHelper';
 import { connectToDatabase } from '@/lib/mongodb/mongodb';
 import Log from '@/lib/types/Log';
+import { unstable_cache } from 'next/cache';
 
 const { MONGODB_COLLECTION } = process.env
 
-export default async function Home() {
+const getLogs = unstable_cache(async () => {
   const { db } = await connectToDatabase();
 
   const logs = await db.collection<Log>(MONGODB_COLLECTION ?? 'Logs')
@@ -23,6 +24,11 @@ export default async function Home() {
       return doc;
     })
     .toArray();
+  return logs;
+}, [], { revalidate: 5 });
+
+export default async function Home() {
+  const logs = await getLogs();
 
   return (
     <div className="container mx-auto px-4 py-8">
