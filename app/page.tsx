@@ -1,17 +1,18 @@
 import { addHours } from '@/lib/extensions/DateHelper';
 import { connectToDatabase } from '@/lib/mongodb/mongodb';
 import Log from '@/lib/types/Log';
+import { cache } from 'react';
 
 const { MONGODB_COLLECTION } = process.env
 
-const getLogs = async (limit: number) => {
+const getLogs = cache(async (limit: number) => {
   const { db } = await connectToDatabase();
 
   const logs = await db.collection<Log>(MONGODB_COLLECTION ?? 'Logs')
     .find({})
     .sort({ Timestamp: -1 })
     .limit(limit)
-    .project({ RenderedMessage: 0 })
+    .project({ RenderedMessage: 0, 'Properties.Message': 0 })
     .map((doc) => {
       if (doc.MessageTemplate) {
         doc.Message = doc.MessageTemplate?.replace('{@Environment}', doc.Properties?.Environment ?? '')
@@ -25,7 +26,7 @@ const getLogs = async (limit: number) => {
     })
     .toArray();
   return logs;
-}
+})
 
 type Props = {
   params: { comicid: string | null, locale: string }
