@@ -1,17 +1,17 @@
 import { addHours } from '@/lib/extensions/DateHelper';
 import { connectToDatabase } from '@/lib/mongodb/mongodb';
 import Log from '@/lib/types/Log';
-import { unstable_cache } from 'next/cache';
 
 const { MONGODB_COLLECTION } = process.env
 
-const getLogs = unstable_cache(async () => {
+const getLogs = async (limit: number) => {
   const { db } = await connectToDatabase();
 
   const logs = await db.collection<Log>(MONGODB_COLLECTION ?? 'Logs')
     .find({})
     .sort({ Timestamp: -1 })
-    .limit(25)
+    .limit(limit)
+    .project({ RenderedMessage: 0, 'Properties.Message': 0 })
     .map((doc) => {
       if (doc.MessageTemplate) {
         doc.Message = doc.MessageTemplate?.replace('{@Environment}', doc.Properties?.Environment ?? '')
@@ -25,10 +25,26 @@ const getLogs = unstable_cache(async () => {
     })
     .toArray();
   return logs;
-}, [], { revalidate: 5 });
+}
 
-export default async function Home() {
-  const logs = await getLogs();
+type Props = {
+  params: { comicid: string | null, locale: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function Home({ searchParams: { limit } }: Props) {
+  let limitQuery = 20;
+
+  try {
+    if (limit) {
+      limitQuery = Number.parseInt(String(limit));
+    }
+  }
+  catch (error) {
+    limitQuery = 25;
+  }
+
+  const logs = await getLogs(limitQuery);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -37,9 +53,9 @@ export default async function Home() {
         <table className="w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3">Timestamp</th>
-              <th scope="col" className="px-6 py-3">Message</th>
-              <th scope="col" className="px-6 py-3">Level</th>
+              <th scope="col" className="px-6 py-3 w-[20%]">Timestamp</th>
+              <th scope="col" className="px-6 py-3 w-[65%]">Message</th>
+              <th scope="col" className="px-6 py-3 w-[15%]">Level</th>
             </tr>
           </thead>
           <tbody>
@@ -48,8 +64,8 @@ export default async function Home() {
                 <td className="px-6 py-4">
                   {(addHours(new Date(log.Timestamp), 7)).toLocaleString()}
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                  {log.Message}
+                <td className="px-6 py-4 font-medium text-gray-900">
+                  <div className="break-words whitespace-normal">{log.Message}</div>
                 </td>
                 <td className="px-6 py-4">
                   <span className="flex items-center">
@@ -65,6 +81,10 @@ export default async function Home() {
             ))}
           </tbody>
         </table>
+      </div >
+      <div className="flex justify-center mt-5">
+        <a id="more" className="flex items-center px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none focus:shadow-outline disabled:opacity-50"
+          href={`/?limit=${logs.length + 10}#more`}>Load More</a>
       </div>
     </div>
   );
