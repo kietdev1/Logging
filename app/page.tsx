@@ -11,7 +11,7 @@ const getLogs = async (limit: number) => {
     .find({})
     .sort({ Timestamp: -1 })
     .limit(limit)
-    .project({ RenderedMessage: 0, 'Properties.Message': 0 })
+    .project({ RenderedMessage: 0 })
     .map((doc) => {
       if (doc.MessageTemplate) {
         doc.Message = doc.MessageTemplate?.replace('{@Environment}', doc.Properties?.Environment ?? '')
@@ -61,10 +61,7 @@ export default async function Home({ searchParams: { limit } }: Props) {
           <tbody>
             {logs.map((log, index) => (
               <tr key={log._id}
-                className={`
-                ${(index + 1) % 10 === 0 ? 'bg-blue-50' : 'bg-white'}
-                border-b hover:bg-gray-50
-              `}>
+                className={`${(index + 1) % 10 === 0 ? 'bg-blue-50' : 'bg-white'} border-b hover:bg-gray-50`}>
                 <td className="px-6 py-4">
                   <span className="flex items-center">
                     <span className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium ${log.Level === 'Information' ? 'bg-green-100 text-green-800' :
