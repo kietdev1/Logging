@@ -53,20 +53,18 @@ export default async function Home({ searchParams: { limit } }: Props) {
         <table className="w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 w-[20%]">Timestamp</th>
-              <th scope="col" className="px-6 py-3 w-[65%]">Message</th>
               <th scope="col" className="px-6 py-3 w-[15%]">Level</th>
+              <th scope="col" className="px-6 py-3 w-[65%]">Message</th>
+              <th scope="col" className="px-6 py-3 w-[20%]">Timestamp</th>
             </tr>
           </thead>
           <tbody>
-            {logs.map((log) => (
-              <tr key={log._id} className="bg-white border-b hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  {(addHours(new Date(log.Timestamp), 7)).toLocaleString()}
-                </td>
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  <div className="break-words whitespace-normal">{log.Message}</div>
-                </td>
+            {logs.map((log, index) => (
+              <tr key={log._id}
+                className={`
+                ${(index + 1) % 10 === 0 ? 'bg-blue-50' : 'bg-white'}
+                border-b hover:bg-gray-50
+              `}>
                 <td className="px-6 py-4">
                   <span className="flex items-center">
                     <span className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium ${log.Level === 'Information' ? 'bg-green-100 text-green-800' :
@@ -77,6 +75,12 @@ export default async function Home({ searchParams: { limit } }: Props) {
                     </span>
                   </span>
                 </td>
+                <td className="px-6 py-4 font-medium text-gray-900">
+                  <div className="break-words whitespace-normal">{log.Message}</div>
+                </td>
+                <td className="px-6 py-4">
+                  {(addHours(new Date(log.Timestamp), 7)).toLocaleString()}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -84,7 +88,7 @@ export default async function Home({ searchParams: { limit } }: Props) {
       </div >
       <div className="flex justify-center mt-5">
         <a id="more" className="flex items-center px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none focus:shadow-outline disabled:opacity-50"
-          href={`/?limit=${logs.length + 10}#more`}>Load More</a>
+          href={`/?limit=${logs.length + 10}`}>Load More</a>
       </div>
     </div>
   );
