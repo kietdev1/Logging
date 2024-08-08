@@ -10,9 +10,9 @@ const getLogs = cache(async (limit: number) => {
 
   const logs = await db.collection<Log>(MONGODB_COLLECTION ?? 'Logs')
     .find({})
-    .sort({ Timestamp: -1 })
-    .limit(limit)
     .project({ RenderedMessage: 0, 'Properties.Message': 0 })
+    .sort({ _id: -1 })
+    .limit(limit)
     .map((doc) => {
       if (doc.MessageTemplate) {
         doc.Message = doc.MessageTemplate?.replace('{@Environment}', doc.Properties?.Environment ?? '')
